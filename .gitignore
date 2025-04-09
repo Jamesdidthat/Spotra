@@ -3,6 +3,10 @@
 # dependencies
 node_modules/
 
+/dataset/
+
+temp.jpg
+
 # Expo
 .expo/
 dist/
@@ -37,3 +41,6 @@ yarn-error.*
 
 app-example
 
+.gitignore
+
+backend/movie_recognition_model.h5

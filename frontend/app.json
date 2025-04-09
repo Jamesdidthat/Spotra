@@ -32,6 +32,13 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermissions": "Allow the app to access your camera",
+          "microphonePermissions": "Allow the app to access your microphone for video recording"
+        }
       ]
     ],
     "experiments": {

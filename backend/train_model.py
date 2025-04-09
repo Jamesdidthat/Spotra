@@ -1,50 +1,77 @@
 import tensorflow as tf
+import os
+import numpy as np
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
-# Define constants
+#Step 1: Verify dataset structure
+DATASET_DIR = "dataset/"
+class_names = sorted([folder for folder in os.listdir(DATASET_DIR) if os.path.isdir(os.path.join(DATASET_DIR, folder))])
+print("Class names:", class_names)  # Should print all 3: ['inside_out', 'interstellar', 'joker']
+
+#Step 2: Data Augmentation & Loading
 IMG_SIZE = (224, 224)
-BATCH_SIZE = 16
-EPOCHS = 5  # Adjust the number of epochs for fine-tuning
+BATCH_SIZE = 32
 
-# Load the existing model
-model = tf.keras.models.load_model("movie_recognition_model.h5")
+datagen = ImageDataGenerator(
+    rescale=1./255,
+    rotation_range=20,
+    width_shift_range=0.2,
+    height_shift_range=0.2,
+    shear_range=0.2,
+    zoom_range=0.2,
+    horizontal_flip=True,
+    validation_split=0.2  # 80% train, 20% validation
+)
 
-# Prepare dataset (before applying transformations)
-raw_train_ds = tf.keras.utils.image_dataset_from_directory(
-    'dataset/',
-    validation_split=0.2,
+train_ds = datagen.flow_from_directory(
+    DATASET_DIR,
+    target_size=IMG_SIZE,
+    batch_size=BATCH_SIZE,
+    class_mode="categorical",
     subset="training",
-    seed=123,
-    image_size=IMG_SIZE,
-    batch_size=BATCH_SIZE
+    shuffle=True  #  Ensure dataset is shuffled
 )
 
-raw_val_ds = tf.keras.utils.image_dataset_from_directory(
-    'dataset/',
-    validation_split=0.2,
+val_ds = datagen.flow_from_directory(
+    DATASET_DIR,
+    target_size=IMG_SIZE,
+    batch_size=BATCH_SIZE,
+    class_mode="categorical",
     subset="validation",
-    seed=123,
-    image_size=IMG_SIZE,
-    batch_size=BATCH_SIZE
+    shuffle=True
 )
 
-# ✅ Get class names before mapping transformations
-class_names = raw_train_ds.class_names
-num_classes = len(class_names)
+#Step 3: Define a Deeper CNN Model
+model = tf.keras.Sequential([
+    tf.keras.layers.Conv2D(32, (3, 3), activation="relu", input_shape=(224, 224, 3)),
+    tf.keras.layers.MaxPooling2D(2, 2),
+    
+    tf.keras.layers.Conv2D(64, (3, 3), activation="relu"),
+    tf.keras.layers.MaxPooling2D(2, 2),
 
-# Normalize the data
-normalization_layer = tf.keras.layers.Rescaling(1./255)
-train_ds = raw_train_ds.map(lambda x, y: (normalization_layer(x), y))
-val_ds = raw_val_ds.map(lambda x, y: (normalization_layer(x), y))
+    tf.keras.layers.Conv2D(128, (3, 3), activation="relu"),
+    tf.keras.layers.MaxPooling2D(2, 2),
 
-#Remove the last layer and replace it with a new one
-model.layers.pop()  # Remove the last layer
-model.add(tf.keras.layers.Dense(num_classes, activation='softmax', name="output_layer"))  # Add new final layer
+    tf.keras.layers.Flatten(),
+    tf.keras.layers.Dense(512, activation="relu"),
+    tf.keras.layers.Dense(len(class_names), activation="softmax")  #Ensure correct output
+])
 
-# Recompile model
-model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+model.compile(
+    optimizer="adam",
+    loss="categorical_crossentropy",
+    metrics=["accuracy"]
+)
 
-# Continue training
-model.fit(train_ds, validation_data=val_ds, epochs=EPOCHS)
+#Step 4: Train the Model
+EPOCHS = 10  # Increase if needed
+history = model.fit(train_ds, validation_data=val_ds, epochs=EPOCHS)
 
-# Save the updated model
-model.save("movie_recognition_model_updated.h5")
+#Step 5: Evaluate Model
+loss, accuracy = model.evaluate(val_ds)
+print(f"Validation Accuracy: {accuracy * 100:.2f}%")  # Should be reasonable (not 100%!)
+
+#Step 6: Save the Model
+MODEL_PATH = "movie_recognition_model.h5"
+model.save(MODEL_PATH)
+print("Model saved successfully!")

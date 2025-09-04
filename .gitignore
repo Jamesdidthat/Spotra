@@ -44,4 +44,5 @@ app-example
 .gitignore
 
 movie-recognition_model.h
-dataset/
+
+backend/dataset/

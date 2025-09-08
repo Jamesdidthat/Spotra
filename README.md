@@ -8,3 +8,5 @@ In Overall,
 the app is performs recogniton of frames to an extent, but it needs a lot of movies and their extracted frames. or there i can improve its efficiency by implementing a web reverse search to ensure accuracy of detection. 
 
 I have to put its development on hold because i do not have currently have the resource to continue, nevertheless, i think it is a good idea overall.
+
+**THE EXTRACTED FRAMES ARE NOT UPLOADED**
